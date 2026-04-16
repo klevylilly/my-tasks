@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Tasks</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f0f5;min-height:100vh;padding:2rem 1rem}
+#app{max-width:640px;margin:0 auto;position:relative}
+canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;border-radius:16px;z-index:10}
+.card{background:linear-gradient(145deg,#fff9f5 0%,#fdf0f5 50%,#f5f0ff 100%);border:0.5px solid #E8E0D8;border-radius:16px;padding:28px;display:flex;flex-direction:column;gap:14px;box-shadow:0 4px 24px rgba(68,18,44,0.07)}
+.header{display:flex;align-items:center;min-height:48px}
+h1{flex:1;font-size:18px;font-weight:600;color:#44122C;letter-spacing:-0.3px}
+.clear-btn{background:#44122C;border:none;font-size:13px;font-weight:500;color:#FFFBF0;cursor:pointer;padding:10px 18px;border-radius:999px;font-family:inherit}
+.clear-btn:hover{opacity:.9}
+.add-row{display:flex;gap:8px;align-items:center}
+.add-input{flex:1;height:38px;padding:0 12px;font-size:14px;border:1px solid #DDD;border-radius:999px;background:#fff;color:#1A1A1A;outline:none;font-family:inherit}
+.add-input:focus{border-color:#44122C}
+.add-select-wrap{position:relative;flex-shrink:0}
+.add-select-wrap select{height:38px;padding:0 28px 0 12px;font-size:12px;font-weight:500;border:1px solid #DDD;border-radius:999px;cursor:pointer;appearance:none;-webkit-appearance:none;font-family:inherit;outline:none}
+.add-select-arrow{position:absolute;right:10px;top:50%;transform:translateY(-50%);pointer-events:none;font-size:8px;line-height:1}
+.add-btn{height:38px;padding:0 18px;font-size:13px;font-weight:500;border:none;border-radius:999px;background:#E8614A;color:#FFFBF0;cursor:pointer;flex-shrink:0;font-family:inherit}
+.add-btn:hover{opacity:.9}
+.divider{border:none;border-top:1px solid #F0E8EC}
+.filters-label{font-size:10px;font-weight:600;color:#B08090;letter-spacing:.07em;text-transform:uppercase}
+.filters{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.f-btn{padding:4px 12px;font-size:12px;border-radius:999px;border:1px solid #DDD;background:transparent;color:#888;cursor:pointer;display:flex;align-items:center;gap:4px;white-space:nowrap;font-family:inherit}
+.f-btn:hover{border-color:#AAA;color:#1A1A1A}
+.f-btn.active{background:#44122C;border-color:#44122C;color:#FFFBF0}
+.f-del{background:none;border:none;color:#AAA;cursor:pointer;font-size:12px;line-height:1;padding:0;opacity:0}
+.f-btn:hover .f-del{opacity:1}
+.f-edit-wrap{display:inline-flex;align-items:center;border-radius:999px;border:1px solid #44122C;overflow:hidden;height:28px}
+.f-edit-inp{width:80px;height:100%;padding:0 8px;font-size:12px;border:none;background:#fff;color:#1A1A1A;outline:none;font-family:inherit}
+.f-edit-save{height:100%;padding:0 8px;font-size:11px;font-weight:500;border:none;border-left:1px solid #DDD;background:transparent;color:#44122C;cursor:pointer;font-family:inherit}
+.add-cat-btn{padding:4px 10px;font-size:12px;border-radius:999px;border:1px dashed #CCC;background:transparent;color:#AAA;cursor:pointer;font-family:inherit}
+.add-cat-btn:hover{color:#1A1A1A;border-color:#888}
+.new-cat-wrap{display:inline-flex;align-items:center;border-radius:999px;border:1px solid #44122C;overflow:hidden;height:28px}
+.new-cat-inp{width:90px;height:100%;padding:0 8px;font-size:12px;border:none;background:#fff;color:#1A1A1A;outline:none;font-family:inherit}
+.new-cat-save{height:100%;padding:0 8px;font-size:11px;font-weight:500;border:none;border-left:1px solid #DDD;background:transparent;color:#44122C;cursor:pointer;font-family:inherit}
+.hint{font-size:11px;color:#C0A8B0}
+.task-list{display:flex;flex-direction:column;gap:6px}
+.task-wrap{position:relative}
+.task{display:flex;align-items:center;gap:10px;padding:10px 12px;background:#fff;border:1px solid #F0E8EC;border-radius:10px;cursor:grab;user-select:none}
+.task.done .task-text{text-decoration:line-through;color:#BBBBBB}
+.drag-handle{color:#CCC;font-size:14px;cursor:grab;flex-shrink:0}
+.check{width:16px;height:16px;border-radius:50%;border:1.5px solid #CCC;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.check.checked{background:#44122C;border-color:#44122C}
+.check.checked::after{content:'';display:block;width:5px;height:8px;border:1.5px solid #fff;border-top:none;border-left:none;transform:rotate(40deg) translateY(-1px)}
+.task-text{flex:1;font-size:14px;color:#1A1A1A;min-width:0}
+.tag{font-size:11px;padding:3px 10px;border-radius:999px;font-weight:500;white-space:nowrap;flex-shrink:0}
+.task-del{background:none;border:none;color:#CCC;cursor:pointer;font-size:16px;line-height:1;padding:0 2px;flex-shrink:0;opacity:0;font-family:inherit}
+.task:hover .task-del{opacity:1}
+.edit-wrap{flex:1;display:flex;gap:8px;align-items:center;min-width:0}
+.edit-inp{flex:1;min-width:0;height:28px;padding:0 8px;font-size:14px;border:1px solid #44122C;border-radius:999px;background:#fff;color:#1A1A1A;outline:none;font-family:inherit}
+.cycle-pill{font-size:11px;padding:3px 10px;border-radius:999px;font-weight:500;white-space:nowrap;flex-shrink:0;cursor:pointer;border:none;font-family:inherit}
+.save-btn{flex-shrink:0;height:28px;padding:0 12px;font-size:12px;font-weight:500;border:none;border-radius:999px;background:#44122C;color:#FFFBF0;cursor:pointer;font-family:inherit}
+.save-btn:hover{opacity:.9}
+.insert-line{position:absolute;left:12px;right:12px;height:2px;background:#E8614A;border-radius:2px;z-index:5}
+.insert-line.top{top:-1px}
+.insert-line.bottom{bottom:-1px}
+.empty{text-align:center;padding:2rem;font-size:13px;color:#BBBBBB;border:1px dashed #E8D8E0;border-radius:10px}
+</style>
+</head>
+<body>
+<div id="app">
+  <canvas id="confetti-canvas"></canvas>
+  <div class="card"></div>
+</div>
+<script>
+const KEY='my-tasks-v3';
+const PALETTE=[
+  {bg:'#F2E8ED',color:'#6B2040',label:'Plum'},
+  {bg:'#F9E8E4',color:'#7A2E1A',label:'Coral'},
+  {bg:'#F9EDE8',color:'#7A3A1A',label:'Terracotta'},
+  {bg:'#F5EAF2',color:'#5C1A50',label:'Magenta'},
+  {bg:'#EEE8F2',color:'#3D1A5C',label:'Violet'},
+  {bg:'#E8EEF5',color:'#1A3058',label:'Navy'},
+  {bg:'#E8F2F0',color:'#1A4A3A',label:'Teal'},
+  {bg:'#F2EDE8',color:'#4A3020',label:'Taupe'},
+];
+const CONFETTI_COLORS=['#E8614A','#44122C','#C94F8A','#7B3FD4','#2E6FD9','#1A9E6E','#E8A030','#D43F3F'];
+
+let tasks,cats,nextId,nextCatId;
+let filter='all',editId=null,editTag=null,addTag=null;
+let editCatId=null,addingCat=false,dragSrc=null,dragOverId=null,dragOverPos=null;
+let confettiFrame=null;
+
+function load(){
+  try{const d=JSON.parse(localStorage.getItem(KEY)||'null');if(d){tasks=d.tasks;cats=d.categories;nextId=d.nextId;nextCatId=d.nextCatId;}}catch(e){}
+  if(!cats||!cats.length){cats=[{id:1,label:'Plum',bg:'#F2E8ED',color:'#6B2040'},{id:2,label:'Coral',bg:'#F9E8E4',color:'#7A2E1A'},{id:3,label:'Violet',bg:'#EEE8F2',color:'#3D1A5C'},{id:4,label:'Teal',bg:'#E8F2F0',color:'#1A4A3A'}];nextCatId=5;}
+  if(!tasks||!tasks.length){tasks=[{id:1,text:'Add your first task',tag:1,done:false}];nextId=2;}
+  addTag=cats[0].id;
+}
+
+function save(){localStorage.setItem(KEY,JSON.stringify({tasks,categories:cats,nextId,nextCatId}));}
+function catById(id){return cats.find(c=>c.id===id);}
+function cycleTag(cur){const i=cats.findIndex(c=>c.id===cur);return cats[(i+1)%cats.length].id;}
+
+function launchConfetti(){
+  const canvas=document.getElementById('confetti-canvas');
+  if(!canvas)return;
+  const ctx=canvas.getContext('2d');
+  canvas.width=canvas.offsetWidth;canvas.height=canvas.offsetHeight;
+  const particles=Array.from({length:70},()=>({
+    x:Math.random()*canvas.width,y:Math.random()*canvas.height*0.3,
+    w:Math.random()*10+6,h:Math.random()*5+3,
+    color:CONFETTI_COLORS[Math.floor(Math.random()*CONFETTI_COLORS.length)],
+    speed:Math.random()*3+1.5,drift:Math.random()*2-1,
+    angle:Math.random()*Math.PI*2,spin:(Math.random()-0.5)*0.15,
+    skew:Math.random()*0.6+0.3,opacity:1,
+  }));
+  cancelAnimationFrame(confettiFrame);
+  function draw(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    particles.forEach(p=>{
+      ctx.save();ctx.globalAlpha=p.opacity;
+      ctx.translate(p.x,p.y);ctx.rotate(p.angle);
+      ctx.transform(1,0,p.skew,1,0,0);
+      ctx.fillStyle=p.color;ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);
+      ctx.restore();
+      p.y+=p.speed;p.x+=p.drift;p.angle+=p.spin;p.opacity-=0.011;
+    });
+    ctx.globalAlpha=1;
+    if(particles.some(p=>p.opacity>0))confettiFrame=requestAnimationFrame(draw);
+    else ctx.clearRect(0,0,canvas.width,canvas.height);
+  }
+  draw();
+}
+
+function render(){
+  const card=document.querySelector('.card');
+  const ac=catById(addTag)||cats[0];
+  const shown=filter==='all'?tasks:tasks.filter(t=>t.tag===filter);
+
+  let fbHtml=`<button class="f-btn${filter==='all'?' active':''}" onclick="setFilter('all')">All</button>`;
+  cats.forEach(c=>{
+    if(editCatId===c.id){
+      fbHtml+=`<span class="f-edit-wrap"><input class="f-edit-inp" id="eci" value="${c.label}" onkeydown="if(event.key==='Enter')saveCat(${c.id});if(event.key==='Escape')cancelCat()"><button class="f-edit-save" onclick="saveCat(${c.id})">Save</button></span>`;
+    } else {
+      fbHtml+=`<button class="f-btn${filter===c.id?' active':''}" onclick="setFilter(${c.id})" ondblclick="startEditCat(${c.id},event)">${c.label}<span class="f-del" onclick="delCat(${c.id},event)">×</span></button>`;
+    }
+  });
+  fbHtml+=addingCat
+    ?`<span class="new-cat-wrap"><input class="new-cat-inp" id="nci" placeholder="Category..." onkeydown="if(event.key==='Enter')saveNewCat();if(event.key==='Escape')cancelNewCat()"><button class="new-cat-save" onclick="saveNewCat()">Add</button></span>`
+    :`<button class="add-cat-btn" onclick="startAddCat()">+ category</button>`;
+
+  let tHtml='';
+  if(!shown.length){
+    tHtml='<div class="empty">No tasks here — add one above</div>';
+  } else {
+    shown.forEach(t=>{
+      if(editId===t.id){
+        const ec=catById(editTag)||cats[0];
+        tHtml+=`<div class="task-wrap"><div class="task" data-id="${t.id}">
+          <span class="drag-handle" style="opacity:.3">⠿</span>
+          <div class="edit-wrap">
+            <input class="edit-inp" id="ei" value="${t.text.replace(/"/g,'&quot;')}" onkeydown="if(event.key==='Enter')saveEdit();if(event.key==='Escape')cancelEdit()">
+            <button class="cycle-pill" style="background:${ec.bg};color:${ec.color}" onclick="editTag=cycleTag(editTag);render()">${ec.label} ↻</button>
+            <button class="save-btn" onclick="saveEdit()">Save</button>
+          </div>
+          <button class="task-del" style="opacity:1;color:#AAA" onclick="delTask(${t.id})">×</button>
+        </div></div>`;
+      } else {
+        const tc=catById(t.tag);
+        const isOver=dragOverId===t.id;
+        tHtml+=`<div class="task-wrap" data-id="${t.id}"
+          ondragover="handleDragOver(event,${t.id})"
+          ondragleave="handleDragLeave()"
+          ondrop="dropTask(${t.id})">
+          ${isOver&&dragOverPos==='top'?'<div class="insert-line top"></div>':''}
+          <div class="task${t.done?' done':''}" draggable="true" data-id="${t.id}"
+            ondragstart="dragSrc=${t.id}"
+            ondragend="handleDragEnd()"
+            ondblclick="startEdit(${t.id})">
+            <span class="drag-handle">⠿</span>
+            <div class="check${t.done?' checked':''}" onclick="toggleTask(${t.id})"></div>
+            <span class="task-text">${t.text}</span>
+            ${tc?`<span class="tag" style="background:${tc.bg};color:${tc.color}">${tc.label}</span>`:''}
+            <button class="task-del" onclick="delTask(${t.id})">×</button>
+          </div>
+          ${isOver&&dragOverPos==='bottom'?'<div class="insert-line bottom"></div>':''}
+        </div>`;
+      }
+    });
+  }
+
+  card.innerHTML=`
+    <div class="header"><h1>My tasks</h1><button class="clear-btn" onclick="clearDone()">Clear completed</button></div>
+    <div class="add-row">
+      <input class="add-input" id="ai" placeholder="Add a task..." onkeydown="if(event.key==='Enter')addTask()">
+      <div class="add-select-wrap">
+        <select id="cat-select" style="background:${ac.bg};color:${ac.color}" onchange="addTag=+this.value;render()">
+          ${cats.map(c=>`<option value="${c.id}"${c.id===addTag?' selected':''}>${c.label}</option>`).join('')}
+        </select>
+        <span class="add-select-arrow" style="color:${ac.color}">▼</span>
+      </div>
+      <button class="add-btn" onclick="addTask()">Add</button>
+    </div>
+    <hr class="divider">
+    <p class="filters-label">Filters</p>
+    <div class="filters">${fbHtml}</div>
+    <p class="hint">Double-click a task to edit · Double-click a category to rename it</p>
+    <div class="task-list">${tHtml}</div>
+  `;
+
+  if(editCatId!==null){const el=document.getElementById('eci');if(el){el.focus();el.select();}}
+  if(addingCat){const el=document.getElementById('nci');if(el)el.focus();}
+  if(editId!==null){const el=document.getElementById('ei');if(el){el.focus();el.select();}}
+}
+
+function addTask(){
+  const el=document.getElementById('ai');
+  const text=(el?el.value:'').trim();
+  const tag=addTag||cats[0]?.id;
+  if(!text||!tag)return;
+  tasks.push({id:nextId++,text,tag,done:false});
+  if(el)el.value='';
+  save();render();
+}
+function toggleTask(id){const t=tasks.find(t=>t.id===id);if(t){t.done=!t.done;save();render();}}
+function delTask(id){tasks=tasks.filter(t=>t.id!==id);if(editId===id)editId=null;save();render();}
+function clearDone(){
+  if(!tasks.some(t=>t.done))return;
+  tasks=tasks.filter(t=>!t.done);
+  save();render();launchConfetti();
+}
+function setFilter(v){filter=v;render();}
+
+function startEdit(id){const t=tasks.find(t=>t.id===id);editId=id;editTag=t?t.tag:cats[0].id;render();}
+function cancelEdit(){editId=null;editTag=null;render();}
+function saveEdit(){
+  const el=document.getElementById('ei');
+  const t=tasks.find(t=>t.id===editId);
+  if(t&&el){const txt=el.value.trim();if(txt)t.text=txt;t.tag=editTag;}
+  editId=null;editTag=null;save();render();
+}
+
+function startEditCat(id,e){e.stopPropagation();editCatId=id;render();}
+function cancelCat(){editCatId=null;render();}
+function saveCat(id){
+  const el=document.getElementById('eci');
+  const c=catById(id);if(c&&el){const v=el.value.trim();if(v)c.label=v;}
+  editCatId=null;save();render();
+}
+function delCat(id,e){
+  e.stopPropagation();
+  cats=cats.filter(c=>c.id!==id);
+  tasks.forEach(t=>{if(t.tag===id)t.tag=cats[0]?cats[0].id:null;});
+  if(filter===id)filter='all';
+  if(addTag===id)addTag=cats[0]?cats[0].id:null;
+  save();render();
+}
+function startAddCat(){addingCat=true;render();}
+function cancelNewCat(){addingCat=false;render();}
+function saveNewCat(){
+  const el=document.getElementById('nci');if(!el)return;
+  const v=el.value.trim();
+  if(v){const pal=PALETTE[cats.length%PALETTE.length];cats.push({id:nextCatId++,label:v,bg:pal.bg,color:pal.color});}
+  addingCat=false;save();render();
+}
+
+function handleDragOver(e,tgtId){
+  e.preventDefault();
+  const rect=e.currentTarget.getBoundingClientRect();
+  dragOverId=tgtId;
+  dragOverPos=e.clientY<rect.top+rect.height/2?'top':'bottom';
+  render();
+}
+function handleDragLeave(){dragOverId=null;dragOverPos=null;render();}
+function handleDragEnd(){dragSrc=null;dragOverId=null;dragOverPos=null;render();}
+function dropTask(tgtId){
+  if(!dragSrc||dragSrc===tgtId){handleDragEnd();return;}
+  const si=tasks.findIndex(t=>t.id===dragSrc);
+  let ti=tasks.findIndex(t=>t.id===tgtId);
+  if(dragOverPos==='bottom')ti++;
+  const[m]=tasks.splice(si,1);
+  tasks.splice(ti>si?ti-1:ti,0,m);
+  save();handleDragEnd();
+}
+
+load();render();
+</script>
+</body>
+</html>
